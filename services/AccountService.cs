@@ -3,6 +3,8 @@ using Core.Exceptions;
 
 public class AccountService : IAccountService
 {
+    private int USERNAME_MIN_LEN = 3;
+    private int PASSWORD_MIN_LEN = 6;
     private readonly IAccountRepo _accountRepo;
     public AccountService(IAccountRepo accountRepo)
     {
@@ -51,7 +53,7 @@ public class AccountService : IAccountService
                 ErrorMessage.UsernameIsRequired);
         }
 
-        if (dto.Username.Length <= 3)
+        if (dto.Username.Length < USERNAME_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
@@ -63,11 +65,16 @@ public class AccountService : IAccountService
             throw new AppException(ErrorCode.ValidationError, ErrorMessage.PasswordIsRequired);
         }
 
-        if (dto.Password.Length <= 3)
+        if (dto.Password.Length < PASSWORD_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.PasswordMinLength);
+        }
+
+        if (!Enum.IsDefined(typeof(RoleEnum), dto.Role))
+        {
+            throw new AppException(ErrorCode.ValidationError, ErrorMessage.RoleInvalid);
         }
 
         var existed = await _accountRepo.GetByUsernameAsync(dto.Username);
@@ -85,6 +92,7 @@ public class AccountService : IAccountService
             Username = dto.Username,
             PasswordHash = PasswordHasher.Hash(dto.Password),
             Active = dto.Active,
+            Role = dto.Role,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -104,7 +112,7 @@ public class AccountService : IAccountService
                 ErrorMessage.UsernameIsRequired);
         }
 
-        if (dto.Username.Length <= 3)
+        if (dto.Username.Length < USERNAME_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
@@ -116,11 +124,16 @@ public class AccountService : IAccountService
             throw new AppException(ErrorCode.ValidationError, ErrorMessage.PasswordIsRequired);
         }
 
-        if (dto.Password.Length <= 3)
+        if (dto.Password.Length < PASSWORD_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.PasswordMinLength);
+        }
+
+        if (!Enum.IsDefined(typeof(RoleEnum), dto.Role))
+        {
+            throw new AppException(ErrorCode.ValidationError, ErrorMessage.RoleInvalid);
         }
 
         var existed = await _accountRepo.GetByIdAsync(dto.Id);
@@ -146,6 +159,7 @@ public class AccountService : IAccountService
         existed.Username = dto.Username;
         existed.PasswordHash = PasswordHasher.Hash(dto.Password);
         existed.Active = dto.Active;
+        existed.Role = dto.Role;
         existed.UpdatedAt = DateTime.UtcNow;
 
         await _accountRepo.SaveAsync();
