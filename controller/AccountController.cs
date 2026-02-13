@@ -1,9 +1,11 @@
 using Core.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 /// <summary>
 /// Account management endpoints
 /// </summary>
+[Authorize(Roles = "Admin")]
 [ApiController]
 [Route("api/[controller]")]
 public class AccountController : ControllerBase

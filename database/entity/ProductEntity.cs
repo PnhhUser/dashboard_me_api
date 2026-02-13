@@ -12,4 +12,7 @@ public class ProductEntity : BaseEntity
 
     public int CategoryId { get; set; }
     public required CategoryEntity Category { get; set; }
+
+    public ICollection<ProductImageEntity> Images { get; set; }
+      = new List<ProductImageEntity>();
 }

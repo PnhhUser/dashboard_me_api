@@ -13,6 +13,6 @@ public class AccountRepo : BaseRepo<AccountEntity>, IAccountRepo
         }
 
         var lowerUsername = username.ToLowerInvariant();
-        return await _dbSet.FirstOrDefaultAsync(x => x.Username.ToLower() == lowerUsername && x.DeletedAt == null);
+        return await _dbSet.FirstOrDefaultAsync(x => x.Username.ToLower() == lowerUsername);
     }
 }

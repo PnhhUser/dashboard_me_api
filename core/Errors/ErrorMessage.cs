@@ -25,4 +25,7 @@ public static class ErrorMessage
     public const string StockNotFound = "Stock not found";
     public const string QuantityInvalid = "Quantity must be greater than or equal to 0";
     public const string CostInvalid = "Cost must be greater than 0";
+
+    // --- AUTHENTICATION ---
+    public const string InvalidCredentials = "Invalid username or password";
 }

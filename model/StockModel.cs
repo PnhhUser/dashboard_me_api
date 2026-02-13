@@ -6,8 +6,6 @@ public class StockModel
 
     public int ProductId { get; set; }
 
-    public ProductModel Product { get; set; } = null!;
-
     public int Quantity { get; set; }
 
     public decimal Cost { get; set; }
@@ -19,13 +17,11 @@ public class StockModel
     public static StockModel ToModel(StockEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        ArgumentNullException.ThrowIfNull(entity.Product);
 
         return new StockModel
         {
             Id = entity.Id,
             ProductId = entity.ProductId,
-            Product = ProductModel.ToModel(entity.Product),
             Quantity = entity.Quantity,
             Cost = entity.Cost,
             CreatedAt = entity.CreatedAt,

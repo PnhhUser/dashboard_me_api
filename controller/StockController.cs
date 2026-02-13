@@ -1,9 +1,9 @@
 using Core.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-/// <summary>
-/// Stock management endpoints
-/// </summary>
+
+[Authorize(Roles = "Admin")]
 [ApiController]
 [Route("api/[controller]")]
 public class StockController : ControllerBase
@@ -41,6 +41,17 @@ public class StockController : ControllerBase
         var stock = await _stockService.GetByIdAsync(id);
 
         return Ok(ApiResponse<StockModel>.Ok(stock));
+    }
+
+    /// <summary>
+    /// Get latest stock entries for all products
+
+    [HttpGet("latest")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<StockModel>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetLatestStock()
+    {
+        var stocks = await _stockService.GetLatestStockAsync();
+        return Ok(ApiResponse<IReadOnlyList<StockModel>>.Ok(stocks));
     }
 
     /// <summary>

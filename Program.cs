@@ -1,6 +1,7 @@
 using Core.Middlewares;
 using Microsoft.EntityFrameworkCore;
 using Core.Extensions;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,10 +15,13 @@ builder.Services.AddDbContext<MeContext>(option =>
     option.UseMySql(conn, version);
 });
 
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
 // Add dependency injection
 builder.Services
     .AddApplication()
     .AddInfrastructure();
+
 
 // Add CORS policy
 builder.Services.AddCors(options =>
@@ -56,11 +60,35 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Dashboard Me API",
-        Version = "v1",
-        Description = "API for Dashboard Management System"
+        Title = "My API",
+        Version = "v1"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token like: Bearer {your token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -76,12 +104,16 @@ if (app.Environment.IsDevelopment())
 // Use custom exception middleware
 app.UseMiddleware<ExceptionMiddleware>();
 
-// Use CORS
-app.UseCors("AllowAll");
-
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+// Use CORS
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 

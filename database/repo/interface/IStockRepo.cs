@@ -1,1 +1,4 @@
-public interface IStockRepo : IBaseRepo<StockEntity> { }
+public interface IStockRepo : IBaseRepo<StockEntity>
+{
+    Task<IReadOnlyList<StockEntity>> GetLatestStockAsync();
+}

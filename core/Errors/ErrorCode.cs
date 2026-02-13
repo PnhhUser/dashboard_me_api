@@ -8,4 +8,5 @@ public static class ErrorCode
     public const string Forbidden = "FORBIDDEN";
     public const string InternalError = "INTERNAL_ERROR";
     public const string BadRequest = "BAD_REQUEST";
+    public const string Conflict = "CONFLICT";
 }

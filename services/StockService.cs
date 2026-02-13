@@ -172,4 +172,14 @@ public class StockService : IStockService
 
         return StockModel.ToModel(existed);
     }
+
+    /// <summary>
+    /// Get the latest stock entries for each product
+
+    public async Task<IReadOnlyList<StockModel>> GetLatestStockAsync()
+    {
+        var stocks = await _stockRepo.GetLatestStockAsync();
+
+        return stocks.Select(StockModel.ToModel).ToList();
+    }
 }

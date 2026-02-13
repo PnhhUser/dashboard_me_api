@@ -27,4 +27,9 @@ public interface IStockService
     /// Delete (soft delete) a stock entry
     /// </summary>
     Task<StockModel> RemoveAsync(int id);
+
+    /// <summary>
+    /// Get the latest stock entries for each product
+    /// </summary>
+    Task<IReadOnlyList<StockModel>> GetLatestStockAsync();
 }
