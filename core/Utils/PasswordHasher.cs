@@ -1,5 +1,7 @@
 using BCrypt.Net;
 
+namespace Core.Utils;
+
 public static class PasswordHasher
 {
     /// <summary>

@@ -1,10 +1,11 @@
 using Core.Errors;
 using Core.Exceptions;
+using Core.Utils;
 
 public class AccountService : IAccountService
 {
-    private int USERNAME_MIN_LEN = 3;
-    private int PASSWORD_MIN_LEN = 6;
+    private const int USERNAME_MIN_LEN = 3;
+    private const int PASSWORD_MIN_LEN = 6;
     private readonly IAccountRepo _accountRepo;
     public AccountService(IAccountRepo accountRepo)
     {
@@ -33,9 +34,10 @@ public class AccountService : IAccountService
 
     public async Task<AccountModel> GetByUsernameAsync(string username)
     {
-        var account = await _accountRepo.GetByUsernameAsync(username);
+        var normalized = Core.Utils.StringHelper.NormalizeUsername(username);
+        var account = await _accountRepo.GetByUsernameAsync(normalized);
 
-        if (account == null || account.DeletedAt != null)
+        if (account == null)
         {
             throw new AppException(ErrorCode.NotFound, ErrorMessage.AccountNotFound);
         }
@@ -46,18 +48,27 @@ public class AccountService : IAccountService
     // ---------- CREATE ----------
     public async Task<AccountModel> AddAsync(CreateAccountDTO dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Username))
+        // normalize and validate username
+        var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
+        if (string.IsNullOrWhiteSpace(username))
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.UsernameIsRequired);
         }
 
-        if (dto.Username.Length < USERNAME_MIN_LEN)
+        if (username.Length < USERNAME_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.UsernameMinLength);
+        }
+
+        if (username.Contains("admin"))
+        {
+            throw new AppException(
+                ErrorCode.ValidationError,
+                "Username cannot contain reserved word 'admin'.");
         }
 
         if (string.IsNullOrWhiteSpace(dto.Password))
@@ -77,7 +88,7 @@ public class AccountService : IAccountService
             throw new AppException(ErrorCode.ValidationError, ErrorMessage.RoleInvalid);
         }
 
-        var existed = await _accountRepo.GetByUsernameAsync(dto.Username);
+        var existed = await _accountRepo.GetByUsernameAsync(username);
 
         if (existed != null)
         {
@@ -89,7 +100,7 @@ public class AccountService : IAccountService
 
         var entity = new AccountEntity
         {
-            Username = dto.Username,
+            Username = username,
             PasswordHash = PasswordHasher.Hash(dto.Password),
             Active = dto.Active,
             Role = dto.Role,
@@ -105,18 +116,26 @@ public class AccountService : IAccountService
     // ---------- EDIT ----------
     public async Task<AccountModel> EditAsync(EditAccountDTO dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Username))
+        var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
+        if (string.IsNullOrWhiteSpace(username))
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.UsernameIsRequired);
         }
 
-        if (dto.Username.Length < USERNAME_MIN_LEN)
+        if (username.Length < USERNAME_MIN_LEN)
         {
             throw new AppException(
                 ErrorCode.ValidationError,
                 ErrorMessage.UsernameMinLength);
+        }
+
+        if (username.Contains("admin"))
+        {
+            throw new AppException(
+                ErrorCode.ValidationError,
+                "Username cannot contain reserved word 'admin'.");
         }
 
         if (string.IsNullOrWhiteSpace(dto.Password))
@@ -146,7 +165,7 @@ public class AccountService : IAccountService
             );
         }
 
-        var duplicated = await _accountRepo.GetByUsernameAsync(dto.Username);
+        var duplicated = await _accountRepo.GetByUsernameAsync(username);
 
         if (duplicated != null && duplicated.Id != existed.Id)
         {
@@ -156,7 +175,7 @@ public class AccountService : IAccountService
             );
         }
 
-        existed.Username = dto.Username;
+        existed.Username = username;
         existed.PasswordHash = PasswordHasher.Hash(dto.Password);
         existed.Active = dto.Active;
         existed.Role = dto.Role;

@@ -3,16 +3,19 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace dashboard_me_api.database.migrations
+namespace dashboard_me_api.database.Migrations
 {
     [DbContext(typeof(MeContext))]
-    partial class MeContextModelSnapshot : ModelSnapshot
+    [Migration("20260303141515_UpDB03032026")]
+    partial class UpDB03032026
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

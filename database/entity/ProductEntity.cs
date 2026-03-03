@@ -1,18 +1,22 @@
 public class ProductEntity : BaseEntity
 {
-    public string Name { get; set; } = null!;
+  public string Name { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+  public string Description { get; set; } = null!;
 
-    public decimal Price { get; set; }
+  public decimal Price { get; set; }
 
-    public ActiveEnum Active { get; set; } = ActiveEnum.Active; // Không hiển thị - hiển thị
+  public int Stock { get; set; } = 0;
+  public decimal AverageCost { get; set; } = 0;
 
-    public required string Code { get; set; }
+  public ActiveEnum Active { get; set; } = ActiveEnum.Active;
 
-    public int CategoryId { get; set; }
-    public required CategoryEntity Category { get; set; }
+  public required string Code { get; set; }
 
-    public ICollection<ProductImageEntity> Images { get; set; }
-      = new List<ProductImageEntity>();
+  public int CategoryId { get; set; }
+  public required CategoryEntity Category { get; set; }
+
+  public ICollection<ProductImageEntity> Images { get; set; } = new List<ProductImageEntity>();
+
+  public ICollection<PurchaseOrderItemEntity> PurchaseOrderItems { get; set; } = new List<PurchaseOrderItemEntity>();
 }

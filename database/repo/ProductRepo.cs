@@ -6,11 +6,19 @@ public class ProductRepo : BaseRepo<ProductEntity>, IProductRepo
 
     public async Task<ProductEntity?> GetByNameAsync(string name)
     {
-        return await _dbSet.FirstOrDefaultAsync(x => x.Name == name && x.DeletedAt == null);
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var trimmed = name.Trim();
+        return await _dbSet.FirstOrDefaultAsync(x => x.Name == trimmed);
     }
 
     public async Task<ProductEntity?> GetByCodeAsync(string code)
     {
-        return await _dbSet.FirstOrDefaultAsync(x => x.Code == code && x.DeletedAt == null);
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var normalized = code.Trim().ToUpperInvariant();
+        return await _dbSet.FirstOrDefaultAsync(x => x.Code.ToUpper() == normalized);
     }
 }

@@ -4,11 +4,11 @@ public class AccountEntity : BaseEntity
 
     public string PasswordHash { get; set; } = null!;
 
-    public ActiveEnum Active { get; set; } = ActiveEnum.Inactive; // Xác định account khóa - không khóa
+    public ActiveEnum Active { get; set; } = ActiveEnum.Inactive;
 
     public DateTime? LastTimeActive { get; set; }
 
-    public bool IsOnline { get; set; } // Xác định trạng online - offline
+    public bool IsOnline { get; set; }
 
     public RoleEnum Role { get; set; } = RoleEnum.User;
 }

@@ -5,7 +5,7 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImageEn
 {
     public void Configure(EntityTypeBuilder<ProductImageEntity> builder)
     {
-        builder.ToTable("productImages");
+        builder.ToTable("product_images");
 
         builder.HasKey(x => x.Id);
 
@@ -15,9 +15,13 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImageEn
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.HasOne(x => x.Product)
-            .WithMany(p => p.Images)
-            .HasForeignKey(x => x.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(x => x.CreatedAt)
+        .HasColumnType("datetime");
+
+        builder.Property(x => x.UpdatedAt)
+        .HasColumnType("datetime");
+
+        builder.Property(x => x.DeletedAt)
+        .HasColumnType("datetime");
     }
 }

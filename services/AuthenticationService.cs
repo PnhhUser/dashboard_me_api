@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Core.Errors;
 using Core.Exceptions;
+using Core.Utils;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -51,7 +52,9 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<LoginModel> LoginAsync(LoginDTO dto)
     {
-        var account = await _accountRepo.GetByUsernameAsync(dto.Username);
+        // make lookup consistent with registration/login
+        var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
+        var account = await _accountRepo.GetByUsernameAsync(username);
 
         if (account == null || !PasswordHasher.Verify(dto.Password, account.PasswordHash))
         {
@@ -72,7 +75,7 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<LoginModel> RegisterAsync(RegisterDTO dto)
     {
-        var username = dto.Username.Trim().ToLower();
+        var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
 
         if (username.Contains("admin"))
         {

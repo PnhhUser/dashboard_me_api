@@ -28,15 +28,12 @@ public abstract class BaseRepo<T> : IBaseRepo<T>
     public async Task<T?> GetByIdAsync(int id)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null);
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task<IReadOnlyList<T>> GetAllAsync()
     {
-        return await _dbSet
-            .AsNoTracking()
-            .Where(x => x.DeletedAt == null)
-            .ToListAsync();
+        return await _dbSet.AsNoTracking().ToListAsync();
     }
 
     // ---------- DELETE ----------

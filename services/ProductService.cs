@@ -52,6 +52,10 @@ public class ProductService : IProductService
     /// <exception cref="AppException">Thrown when validation fails or references don't exist</exception>
     public async Task<ProductModel> AddAsync(CreateProductDTO dto)
     {
+        dto.Name = dto.Name?.Trim() ?? string.Empty;
+        dto.Description = dto.Description?.Trim() ?? string.Empty;
+        dto.Code = dto.Code?.Trim() ?? string.Empty;
+
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new AppException(
@@ -59,7 +63,9 @@ public class ProductService : IProductService
                 ErrorMessage.ProductIsRequired);
         }
 
-        var exists = await _productRepo.GetByCodeAsync(dto.Code);
+        // normalize code to upper so that uniqueness is case‑insensitive
+        var normalizedCode = dto.Code.ToUpperInvariant();
+        var exists = await _productRepo.GetByCodeAsync(normalizedCode);
 
         if (exists != null)
         {
@@ -92,7 +98,7 @@ public class ProductService : IProductService
             Name = dto.Name,
             Description = dto.Description,
             Price = dto.Price,
-            Code = dto.Code,
+            Code = normalizedCode,
             Category = category,
             Active = dto.Active
         };
@@ -111,6 +117,10 @@ public class ProductService : IProductService
     /// <exception cref="AppException">Thrown when validation fails or product not found</exception>
     public async Task<ProductModel> EditAsync(EditProductDTO dto)
     {
+        dto.Name = dto.Name?.Trim() ?? string.Empty;
+        dto.Description = dto.Description?.Trim() ?? string.Empty;
+        dto.Code = dto.Code?.Trim() ?? string.Empty;
+
         var existed = await _productRepo.GetByIdAsync(dto.Id);
 
         if (existed == null)
@@ -138,7 +148,7 @@ public class ProductService : IProductService
             existed.Description = dto.Description;
         }
 
-        var duplicateCode = await _productRepo.GetByCodeAsync(dto.Code);
+        var duplicateCode = await _productRepo.GetByCodeAsync(dto.Code.ToUpperInvariant());
 
         if (duplicateCode != null && duplicateCode.Id != existed.Id)
         {
@@ -149,7 +159,7 @@ public class ProductService : IProductService
         }
         else
         {
-            existed.Code = dto.Code;
+            existed.Code = dto.Code.ToUpperInvariant();
         }
 
 

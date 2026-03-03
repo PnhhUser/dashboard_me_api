@@ -32,8 +32,7 @@ public class AccountEntityConfiguration
                      .HasDefaultValue(false);
 
               builder.Property(x => x.CreatedAt)
-                     .HasColumnType("datetime")
-                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                     .HasColumnType("datetime");
 
               builder.Property(x => x.UpdatedAt)
                      .HasColumnType("datetime");

@@ -54,6 +54,10 @@ public class CategoryService : ICategoryService
     // ---------- CREATE ----------
     public async Task<CategoryModel> AddAsync(CreateCategoryDTO dto)
     {
+        // normalize trim inputs
+        dto.Name = dto.Name?.Trim() ?? string.Empty;
+        dto.Description = dto.Description?.Trim() ?? string.Empty;
+
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new AppException(
@@ -87,6 +91,9 @@ public class CategoryService : ICategoryService
     // ---------- EDIT ----------
     public async Task<CategoryModel> EditAsync(EditCategoryDTO dto)
     {
+        dto.Name = dto.Name?.Trim() ?? string.Empty;
+        dto.Description = dto.Description?.Trim() ?? string.Empty;
+
         var existed = await _categoryRepo.GetByIdAsync(dto.Id)
             ?? throw new AppException(ErrorCode.NotFound, ErrorMessage.CategoryNotFound);
 

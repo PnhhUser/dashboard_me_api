@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Core.Utils;
 
 public static class AccountSeed
 {
@@ -8,7 +9,7 @@ public static class AccountSeed
             new AccountEntity
             {
                 Id = 1,
-                Username = "admin",
+                Username = Core.Utils.StringHelper.NormalizeUsername("admin"),
                 PasswordHash = PasswordHasher.Hash("123456"),
                 Active = ActiveEnum.Active,
                 Role = RoleEnum.Admin,

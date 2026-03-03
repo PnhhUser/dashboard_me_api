@@ -11,6 +11,11 @@ public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity
 
         builder.HasIndex(x => x.CategoryId);
 
+        builder.HasOne(x => x.Category)
+       .WithMany()
+       .HasForeignKey(x => x.CategoryId)
+       .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(x => x.Code)
         .IsUnique();
 
@@ -33,8 +38,7 @@ public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity
         .IsRequired();
 
         builder.Property(x => x.CreatedAt)
-        .HasColumnType("datetime")
-             .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        .HasColumnType("datetime");
 
         builder.Property(x => x.UpdatedAt)
         .HasColumnType("datetime");
