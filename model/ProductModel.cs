@@ -18,6 +18,8 @@ public class ProductModel
 
     public CategoryModel? CategoryModel { get; set; }
 
+    public List<ProductImageModel> Images { get; set; } = new();
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
@@ -40,7 +42,7 @@ public class ProductModel
         };
     }
 
-    public static ProductModel ToModel(ProductEntity entity, CategoryModel model)
+    public static ProductModel ToModel(ProductEntity entity, CategoryModel? model)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

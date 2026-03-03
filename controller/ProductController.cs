@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
+    private readonly IProductImageService _productImageService;
 
-    public ProductController(IProductService productService)
+    public ProductController(IProductService productService, IProductImageService productImageService)
     {
         _productService = productService;
+        _productImageService = productImageService;
     }
 
     /// <summary>
@@ -86,5 +88,56 @@ public class ProductController : ControllerBase
         var product = await _productService.RemoveAsync(id);
 
         return Ok(ApiResponse<ProductModel>.Ok(product, ResponsesMessage.RemovedSuccessfully("Product")));
+    }
+
+    /// <summary>
+    /// Upload multiple images for a product
+    /// </summary>
+    /// <param name="dto">Upload images data</param>
+    /// <returns>Success response</returns>
+    [HttpPost("upload-images")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UploadImages([FromForm] UploadProductImagesDto dto)
+    {
+        await _productImageService.UploadImagesAsync(dto);
+
+        return Ok(ApiResponse<string>.Ok(
+            "Upload successful",
+            ResponsesMessage.CreatedSuccessfully("Product images")
+        ));
+    }
+
+    [HttpPut("set-thumbnail")]
+    public async Task<IActionResult> SetThumbnail([FromBody] SetProductThumbnailDto dto)
+    {
+        await _productImageService
+            .SetThumbnailAsync(dto.ProductId, dto.DisplayOrder);
+
+        return Ok(new
+        {
+            message = "Thumbnail updated successfully."
+        });
+    }
+
+    [HttpGet("{productId}/images")]
+    public async Task<IActionResult> GetImagesByProductId(int productId)
+    {
+        var result = await _productImageService
+            .GetImagesByProductId(productId);
+
+        return Ok(result);
+    }
+
+
+    [HttpGet("{productId}/thumbnail")]
+    public async Task<IActionResult> GetThumbnail(int productId)
+    {
+        var result = await _productImageService
+            .GetThumbnailAsync(productId);
+
+        return Ok(result);
     }
 }

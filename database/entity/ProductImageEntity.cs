@@ -7,5 +7,5 @@ public class ProductImageEntity : BaseEntity
     public bool IsPrimary { get; set; } = false;
 
     public int ProductId { get; set; }
-    public required ProductEntity Product { get; set; }
+    public ProductEntity Product { get; set; } = null!;
 }

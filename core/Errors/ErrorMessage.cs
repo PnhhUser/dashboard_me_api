@@ -20,6 +20,7 @@ public static class ErrorMessage
     public const string ProductIsRequired = "Product name is required";
     public const string ProductCodeAlreadyExists = "Product code already exists";
     public const string PriceInvalid = "Price must be greater than 0";
+    public const string NoFilesUploaded = "No files uploaded";
 
     // --- STOCK ---
     public const string StockNotFound = "Stock not found";

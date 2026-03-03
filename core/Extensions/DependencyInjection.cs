@@ -8,6 +8,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductImageService, ProductService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
 
         return services;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountRepo, AccountRepo>();
         services.AddScoped<ICategoryRepo, CategoryRepo>();
         services.AddScoped<IProductRepo, ProductRepo>();
+        services.AddScoped<IProductImageRepo, ProductImageRepo>();
 
         return services;
     }
