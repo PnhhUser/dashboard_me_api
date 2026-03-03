@@ -11,6 +11,11 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImageEn
 
         builder.HasIndex(x => x.ProductId);
 
+        builder.HasOne(x => x.Product)
+       .WithMany(p => p.Images)
+       .HasForeignKey(x => x.ProductId)
+       .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(x => x.ImageUrl)
             .IsRequired()
             .HasMaxLength(500);

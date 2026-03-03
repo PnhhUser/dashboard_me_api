@@ -199,8 +199,7 @@ public class AccountService : IAccountService
             );
         }
 
-        existed.UpdatedAt = DateTime.UtcNow;
-        existed.DeletedAt = DateTime.UtcNow;
+        _accountRepo.SoftDeleteAsync(existed);
 
         await _accountRepo.SaveAsync();
 

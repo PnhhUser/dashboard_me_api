@@ -106,7 +106,9 @@ public class ProductService : IProductService
         await _productRepo.AddAsync(entity);
         await _productRepo.SaveAsync();
 
-        return ProductModel.ToModel(entity);
+        var categoryModel = CategoryModel.ToModel(category);
+
+        return ProductModel.ToModel(entity, categoryModel);
     }
 
     /// <summary>
@@ -194,7 +196,9 @@ public class ProductService : IProductService
 
         await _productRepo.SaveAsync();
 
-        return ProductModel.ToModel(existed);
+        var categoryModel = CategoryModel.ToModel(category);
+
+        return ProductModel.ToModel(existed, categoryModel);
     }
 
     /// <summary>
@@ -215,8 +219,7 @@ public class ProductService : IProductService
             );
         }
 
-        existed.UpdatedAt = DateTime.UtcNow;
-        existed.DeletedAt = DateTime.UtcNow;
+        _productRepo.SoftDeleteAsync(existed);
 
         await _productRepo.SaveAsync();
 

@@ -43,8 +43,7 @@ public class CategoryService : ICategoryService
             );
         }
 
-        existed.UpdatedAt = DateTime.UtcNow;
-        existed.DeletedAt = DateTime.UtcNow;
+        _categoryRepo.SoftDeleteAsync(existed);
 
         await _categoryRepo.SaveAsync();
 

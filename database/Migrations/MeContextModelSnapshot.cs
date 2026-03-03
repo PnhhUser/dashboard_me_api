@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace dashboard_me_api.database.migrations
+namespace dashboard_me_api.database.Migrations
 {
     [DbContext(typeof(MeContext))]
     partial class MeContextModelSnapshot : ModelSnapshot
@@ -73,9 +73,9 @@ namespace dashboard_me_api.database.migrations
                         {
                             Id = 1,
                             Active = 1,
-                            CreatedAt = new DateTime(2026, 3, 3, 14, 15, 13, 76, DateTimeKind.Utc).AddTicks(3656),
+                            CreatedAt = new DateTime(2026, 3, 3, 14, 40, 17, 417, DateTimeKind.Utc).AddTicks(2987),
                             IsOnline = false,
-                            PasswordHash = "$2a$11$a4iCBDSeWGsBoIpqC6OuCOcY2bFZRwUPtz9z6rGhgUELP2hmPrmMq",
+                            PasswordHash = "$2a$11$bXEkjYyziiV7RDzRDIpf5e1pbuY6RTtpy2Bk2C3lkcv8xo7drL53G",
                             Role = 99,
                             Username = "admin"
                         });

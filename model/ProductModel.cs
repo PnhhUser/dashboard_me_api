@@ -16,6 +16,8 @@ public class ProductModel
 
     public int CategoryId { get; set; }
 
+    public CategoryModel? CategoryModel { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
@@ -32,6 +34,25 @@ public class ProductModel
             Price = entity.Price,
             Active = entity.Active,
             Code = entity.Code,
+            CategoryId = entity.CategoryId,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        };
+    }
+
+    public static ProductModel ToModel(ProductEntity entity, CategoryModel model)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new ProductModel
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            Price = entity.Price,
+            Active = entity.Active,
+            Code = entity.Code,
+            CategoryModel = model,
             CategoryId = entity.CategoryId,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt

@@ -47,4 +47,9 @@ public abstract class BaseRepo<T> : IBaseRepo<T>
         return true;
     }
 
+    public void SoftDeleteAsync(T entity)
+    {
+        entity.UpdatedAt = DateTime.Now;
+        entity.DeletedAt = DateTime.Now;
+    }
 }

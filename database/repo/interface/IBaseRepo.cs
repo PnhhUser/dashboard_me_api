@@ -9,4 +9,6 @@ public interface IBaseRepo<T> where T : class
     Task<T?> GetByIdAsync(int id);
 
     Task SaveAsync();
+
+    void SoftDeleteAsync(T entity);
 }
