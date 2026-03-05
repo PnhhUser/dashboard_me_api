@@ -199,7 +199,7 @@ public class AccountService : IAccountService
             );
         }
 
-        _accountRepo.SoftDeleteAsync(existed);
+        _accountRepo.SoftDelete(existed);
 
         await _accountRepo.SaveAsync();
 

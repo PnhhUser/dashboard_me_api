@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using Core.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -18,11 +20,11 @@ public class AuthenticationController : ControllerBase
     /// <returns>Registered user details</returns>
     ///     
     [HttpPost("register")]
-    [ProducesResponseType(typeof(ApiResponse<LoginModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
     {
         var result = await _authService.RegisterAsync(dto);
-        return Ok(ApiResponse<LoginModel>.Ok(result));
+        return Ok(ApiResponse<AuthModel>.Ok(result));
     }
 
 
@@ -33,23 +35,41 @@ public class AuthenticationController : ControllerBase
     /// <returns>JWT token and expiration</returns>
     /// 
     [HttpPost("login")]
-    [ProducesResponseType(typeof(ApiResponse<LoginModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginDTO dto)
     {
         var result = await _authService.LoginAsync(dto);
-        return Ok(ApiResponse<LoginModel>.Ok(result));
+        return Ok(ApiResponse<AuthModel>.Ok(result));
     }
 
-    /// <summary>
-    /// User logout endpoint
-    /// </summary>
-    /// <param name="accountId">Account ID</param>
-    /// <returns>Action result</returns>
+    [Authorize]
     [HttpPost("logout")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Logout([FromBody] int accountId)
+    public async Task<IActionResult> Logout([FromBody] LogoutDTO dto)
     {
-        await _authService.LogoutAsync(accountId);
-        return Ok();
+        var accountId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        await _authService.LogoutAsync(accountId, dto.RefreshToken);
+
+        return Ok(ApiResponse.Ok());
+    }
+
+
+    [HttpPost("refresh-token")]
+    [ProducesResponseType(typeof(ApiResponse<AuthModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDTO dto)
+    {
+        var result = await _authService.RefreshAsync(dto.RefreshToken);
+
+        return Ok(ApiResponse<AuthModel>.Ok(result));
+    }
+
+    [Authorize]
+    [HttpGet("check-auth")]
+    [ProducesResponseType(typeof(ApiResponse<AuthUserModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CheckAuth()
+    {
+        var result = await _authService.CheckAuthAsync(User);
+
+        return Ok(ApiResponse<AuthUserModel>.Ok(result));
     }
 }

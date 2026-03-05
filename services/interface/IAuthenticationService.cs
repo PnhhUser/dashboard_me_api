@@ -1,10 +1,16 @@
+using System.Security.Claims;
+
 public interface IAuthenticationService
 {
-    Task<LoginModel> RegisterAsync(RegisterDTO dto);
+    Task<AuthModel> RegisterAsync(RegisterDTO dto);
 
-    Task<LoginModel> LoginAsync(LoginDTO dto);
+    Task<AuthModel> LoginAsync(LoginDTO dto);
 
-    Task LogoutAsync(int accountId);
+    Task LogoutAsync(int accountId, string refreshToken);
+
+    Task<AuthModel> RefreshAsync(string refreshToken);
+
+    Task<AuthUserModel> CheckAuthAsync(ClaimsPrincipal user);
 
     // Task<bool> IsUsernameAvailableAsync(string username);
 

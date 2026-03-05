@@ -12,12 +12,16 @@ public class AuthenticationService : IAuthenticationService
     private readonly IAccountRepo _accountRepo;
     private readonly JwtSettings _jwt;
 
+    private readonly IRefreshTokenRepo _refreshTokenRepo;
+
     public AuthenticationService(
         IAccountRepo accountRepo,
-        IOptions<JwtSettings> jwtOptions)
+        IOptions<JwtSettings> jwtOptions,
+        IRefreshTokenRepo refreshTokenRepo)
     {
         _accountRepo = accountRepo;
         _jwt = jwtOptions.Value;
+        _refreshTokenRepo = refreshTokenRepo;
     }
 
 
@@ -31,12 +35,12 @@ public class AuthenticationService : IAuthenticationService
             SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
-        {
-        new Claim(JwtRegisteredClaimNames.Sub, accountId.ToString()),
-        new Claim(JwtRegisteredClaimNames.UniqueName, username),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.Role, role.ToString())
-    };
+            {
+                new Claim(ClaimTypes.NameIdentifier, accountId.ToString()),
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, role.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
@@ -50,7 +54,7 @@ public class AuthenticationService : IAuthenticationService
     }
 
 
-    public async Task<LoginModel> LoginAsync(LoginDTO dto)
+    public async Task<AuthModel> LoginAsync(LoginDTO dto)
     {
         // make lookup consistent with registration/login
         var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
@@ -65,15 +69,37 @@ public class AuthenticationService : IAuthenticationService
 
         var token = GenerateJwtToken(account.Id, account.Username, account.Role);
 
-        return new LoginModel
+        var refreshToken = GenerateRefreshToken();
+
+        var refreshTokenEntity = new RefreshTokenEntity
         {
-            Token = token,
+            Token = refreshToken,
+            AccountId = account.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _refreshTokenRepo.AddAsync(refreshTokenEntity);
+        await _refreshTokenRepo.SaveAsync();
+
+        return new AuthModel
+        {
+            AccessToken = token,
+            RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddMinutes(_jwt.ExpirationInMinutes)
         };
     }
 
+    private string GenerateRefreshToken()
+    {
+        var bytes = new byte[64];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
 
-    public async Task<LoginModel> RegisterAsync(RegisterDTO dto)
+        return Convert.ToBase64String(bytes);
+    }
+
+
+    public async Task<AuthModel> RegisterAsync(RegisterDTO dto)
     {
         var username = Core.Utils.StringHelper.NormalizeUsername(dto.Username);
 
@@ -116,17 +142,134 @@ public class AuthenticationService : IAuthenticationService
 
         var expiry = now.AddMinutes(_jwt.ExpirationInMinutes);
 
-        return new LoginModel
+        var refreshToken = GenerateRefreshToken();
+
+        var refreshTokenEntity = new RefreshTokenEntity
         {
-            Token = token,
+            Token = refreshToken,
+            AccountId = newAccount.Id,
+            ExpiresAt = now.AddDays(7)
+        };
+
+        await _refreshTokenRepo.AddAsync(refreshTokenEntity);
+        await _refreshTokenRepo.SaveAsync();
+
+        return new AuthModel
+        {
+            AccessToken = token,
+            RefreshToken = refreshToken,
             ExpiresAt = expiry
         };
     }
 
-    public async Task LogoutAsync(int accountId)
+    public async Task LogoutAsync(int accountId, string refreshToken)
     {
-        // In a real-world application, you might want to implement token blacklisting
-        // or other mechanisms to invalidate the token on logout.
-        await Task.CompletedTask;
+        var tokenEntity = await _refreshTokenRepo.GetByTokenAsync(refreshToken);
+
+        if (tokenEntity == null)
+            return;
+
+        if (tokenEntity.AccountId != accountId)
+        {
+            throw new AppException(
+                ErrorCode.Unauthorized,
+                "Unauthorized logout attempt");
+        }
+
+        if (tokenEntity.IsRevoked)
+        {
+            throw new AppException(
+            ErrorCode.Unauthorized,
+            "Refresh token already revoked");
+        }
+
+        if (tokenEntity.ExpiresAt < DateTime.UtcNow)
+            return;
+
+        tokenEntity.IsRevoked = true;
+        tokenEntity.RevokedAt = DateTime.UtcNow;
+
+        await _refreshTokenRepo.SaveAsync();
+    }
+
+
+    public async Task<AuthModel> RefreshAsync(string refreshToken)
+    {
+        var tokenEntity = await _refreshTokenRepo.GetByTokenAsync(refreshToken);
+
+        if (tokenEntity == null)
+        {
+            throw new AppException(
+                ErrorCode.Unauthorized,
+                "Invalid refresh token");
+        }
+
+        if (tokenEntity.IsRevoked)
+        {
+            throw new AppException(
+                ErrorCode.Unauthorized,
+                "Refresh token revoked");
+        }
+
+        if (tokenEntity.ExpiresAt < DateTime.UtcNow)
+        {
+            throw new AppException(
+                ErrorCode.Unauthorized,
+                "Refresh token expired");
+        }
+
+        var account = await _accountRepo.GetByIdAsync(tokenEntity.AccountId);
+
+        if (account == null)
+        {
+            throw new AppException(
+                ErrorCode.Unauthorized,
+                "Account not found");
+        }
+
+        // revoke token cũ
+        tokenEntity.IsRevoked = true;
+        tokenEntity.RevokedAt = DateTime.UtcNow;
+
+        // tạo token mới
+        var newAccessToken = GenerateJwtToken(
+            account.Id,
+            account.Username,
+            account.Role);
+
+        var newRefreshToken = GenerateRefreshToken();
+
+        var newRefreshEntity = new RefreshTokenEntity
+        {
+            Token = newRefreshToken,
+            AccountId = account.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _refreshTokenRepo.AddAsync(newRefreshEntity);
+        await _refreshTokenRepo.SaveAsync();
+
+        return new AuthModel
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwt.ExpirationInMinutes)
+        };
+    }
+
+    public Task<AuthUserModel> CheckAuthAsync(ClaimsPrincipal user)
+    {
+        var id = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var username = user.FindFirstValue(ClaimTypes.Name)!;
+        var role = Enum.Parse<RoleEnum>(user.FindFirstValue(ClaimTypes.Role)!);
+
+        var result = new AuthUserModel
+        {
+            Id = id,
+            Username = username,
+            Role = role
+        };
+
+        return Task.FromResult(result);
     }
 }

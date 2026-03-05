@@ -140,4 +140,44 @@ public class ProductController : ControllerBase
 
         return Ok(result);
     }
+
+
+    /// <summary>
+    /// Thay đổi ảnh theo displayOrder
+    /// </summary>
+    [HttpPut("{displayOrder:int}")]
+    public async Task<IActionResult> ChangeImage(
+        int productId,
+        int displayOrder,
+        IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("File is required.");
+
+        await _productImageService.ChangeImageAsync(productId, displayOrder, file);
+
+        return Ok(new
+        {
+            message = "Changed image successfully."
+        });
+    }
+
+
+    /// <summary>
+    /// Xóa ảnh theo displayOrder
+    /// </summary>
+    [HttpDelete("{displayOrder:int}")]
+    public async Task<IActionResult> RemoveImage(
+        int productId,
+        int displayOrder)
+    {
+        await _productImageService.RemoveImage(productId, displayOrder);
+
+        return Ok(new
+        {
+            message = "Remove image successfully."
+        });
+    }
+
+
 }

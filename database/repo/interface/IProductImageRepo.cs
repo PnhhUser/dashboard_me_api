@@ -9,4 +9,10 @@ public interface IProductImageRepo : IBaseRepo<ProductImageEntity>
     Task<int> GetMaxDisplayOrderAsync(int productId);
 
     Task<int> SetThumbnailByDisplayOrderAsync(int productId, int displayOrder);
+
+    Task<ProductImageEntity?> GetByProductAndOrderAsync(int productId, int displayOrder);
+
+    void Remove(ProductImageEntity entity);
+
+    Task<List<ProductImageEntity>> GetImagesGreaterThanOrderAsync(int productId, int displayOrder);
 }

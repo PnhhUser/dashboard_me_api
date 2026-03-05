@@ -1,10 +1,32 @@
 using System.ComponentModel.DataAnnotations;
 
-public class LoginModel
+public class AuthModel
 {
-    public required string Token { get; set; }
+    public required string AccessToken { get; set; }
+
+    public required string RefreshToken { get; set; }
 
     public DateTime ExpiresAt { get; set; }
+}
+
+public class AuthUserModel
+{
+    public int Id { get; set; }
+
+    public string Username { get; set; } = null!;
+
+    public RoleEnum Role { get; set; }
+}
+
+
+public class RefreshTokenDTO
+{
+    public required string RefreshToken { get; set; }
+}
+
+public class LogoutDTO
+{
+    public required string RefreshToken { get; set; }
 }
 
 public class LoginDTO

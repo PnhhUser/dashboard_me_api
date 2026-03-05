@@ -262,7 +262,7 @@ public class ProductService : IProductService, IProductImageService
             );
         }
 
-        _productRepo.SoftDeleteAsync(existed);
+        _productRepo.SoftDelete(existed);
 
         await _productRepo.SaveAsync();
 
@@ -290,6 +290,8 @@ public class ProductService : IProductService, IProductImageService
         }
 
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var allowedContentTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+
         const long maxFileSize = 5 * 1024 * 1024; // 5MB
 
         var imageEntities = new List<ProductImageEntity>();
@@ -309,12 +311,15 @@ public class ProductService : IProductService, IProductImageService
                 continue;
 
             if (file.Length > maxFileSize)
-                throw new AppException(ErrorCode.BadRequest, "File exceeds 5MB.");
+                throw new AppException(ErrorCode.BadRequest, ErrorMessage.FileExceedsMaximumSize);
 
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
             if (!allowedExtensions.Contains(extension))
-                throw new AppException(ErrorCode.BadRequest, "Invalid file format.");
+                throw new AppException(ErrorCode.BadRequest, ErrorMessage.InvalidFileExtension);
+
+            if (!allowedContentTypes.Contains(file.ContentType.ToLower()))
+                throw new AppException(ErrorCode.BadRequest, ErrorMessage.InvalidFileType);
 
             var fileName = $"{Guid.NewGuid()}{extension}";
             var filePath = Path.Combine(uploadPath, fileName);
@@ -335,7 +340,7 @@ public class ProductService : IProductService, IProductImageService
         }
 
         if (!imageEntities.Any())
-            throw new AppException(ErrorCode.BadRequest, "No valid images.");
+            throw new AppException(ErrorCode.BadRequest, ErrorMessage.ImageInvalid);
 
         await _productImageRepo.AddRangeAsync(imageEntities);
         await _productImageRepo.SaveAsync();
@@ -349,7 +354,7 @@ public class ProductService : IProductService, IProductImageService
         {
             throw new AppException(
                 ErrorCode.NotFound,
-                "Image not found."
+                ErrorMessage.ImageNotFound
             );
         }
 
@@ -364,7 +369,7 @@ public class ProductService : IProductService, IProductImageService
         {
             throw new AppException(
                 ErrorCode.NotFound,
-                "Image not found."
+                ErrorMessage.ImageNotFound
             );
         }
 
@@ -373,16 +378,93 @@ public class ProductService : IProductService, IProductImageService
 
     public async Task<ProductImageModel> GetThumbnailAsync(int productId)
     {
-        var entity = await _productImageRepo.GetThumbnailAsync(productId);
+        var image = await _productImageRepo.GetThumbnailAsync(productId);
 
-        if (entity == null)
+        if (image == null)
         {
             throw new AppException(
                 ErrorCode.NotFound,
-                "Image not found."
+                ErrorMessage.ImageNotFound
             );
         }
 
-        return ProductImageModel.ToModel(entity);
+        return ProductImageModel.ToModel(image);
     }
+
+    public async Task ChangeImageAsync(
+    int productId,
+    int displayOrder,
+    IFormFile file)
+    {
+        var image = await _productImageRepo
+            .GetByProductAndOrderAsync(productId, displayOrder);
+
+        if (image == null)
+            throw new AppException(ErrorCode.NotFound, ErrorMessage.ImageNotFound);
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName).ToLowerInvariant()}";
+        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
+
+        if (!Directory.Exists(uploadPath))
+            Directory.CreateDirectory(uploadPath);
+
+        var fullPath = Path.Combine(uploadPath, fileName);
+
+        using (var stream = new FileStream(fullPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var newImageUrl = $"/uploads/{fileName}";
+
+        DeletePhysicalFile(image.ImageUrl);
+
+        image.ImageUrl = newImageUrl;
+
+        await _productImageRepo.SaveAsync();
+    }
+
+    public async Task RemoveImage(int productId, int displayOrder)
+    {
+        var image = await _productImageRepo
+            .GetByProductAndOrderAsync(productId, displayOrder);
+
+        if (image == null)
+            throw new AppException(ErrorCode.NotFound, ErrorMessage.ImageNotFound);
+
+        var imageUrl = image.ImageUrl;
+
+        _productImageRepo.Remove(image);
+
+        var imagesToReorder = await _productImageRepo
+            .GetImagesGreaterThanOrderAsync(productId, displayOrder);
+
+        foreach (var img in imagesToReorder)
+        {
+            img.DisplayOrder -= 1;
+        }
+
+        await _productImageRepo.SaveAsync();
+
+        // 3️⃣ Sau khi DB ok → xóa file vật lý
+        DeletePhysicalFile(imageUrl);
+    }
+
+
+    private void DeletePhysicalFile(string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return;
+
+        // Bỏ dấu "/" đầu
+        var relativePath = imageUrl.TrimStart('/');
+
+        var fullPath = Path.Combine(_environment.WebRootPath, relativePath);
+
+        if (File.Exists(fullPath))
+        {
+            File.Delete(fullPath);
+        }
+    }
+
 }

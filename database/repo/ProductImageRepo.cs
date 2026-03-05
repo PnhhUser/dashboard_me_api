@@ -13,7 +13,6 @@ public class ProductImageRepo : BaseRepo<ProductImageEntity>, IProductImageRepo
     public async Task<ProductImageEntity?> GetThumbnailAsync(int productId)
     {
         return await _dbSet
-                    .AsNoTracking()
                     .Where(x => x.ProductId == productId && x.IsPrimary)
                     .FirstOrDefaultAsync();
     }
@@ -21,7 +20,6 @@ public class ProductImageRepo : BaseRepo<ProductImageEntity>, IProductImageRepo
     public async Task<IEnumerable<ProductImageEntity>> GetByProductIdAsync(int productId)
     {
         return await _dbSet
-                    .AsNoTracking()
                     .Where(x => x.ProductId == productId)
                     .ToListAsync();
     }
@@ -54,5 +52,25 @@ public class ProductImageRepo : BaseRepo<ProductImageEntity>, IProductImageRepo
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow));
 
         return affectedRows;
+    }
+
+    public async Task<ProductImageEntity?> GetByProductAndOrderAsync(int productId, int displayOrder)
+    {
+        return await _dbSet.FirstOrDefaultAsync(x => x.ProductId == productId && x.DisplayOrder == displayOrder);
+    }
+
+
+    public void Remove(ProductImageEntity entity)
+    {
+        _dbSet.Remove(entity);
+    }
+
+    public async Task<List<ProductImageEntity>> GetImagesGreaterThanOrderAsync(int productId, int displayOrder)
+    {
+        return await _dbSet
+        .Where(x => x.ProductId == productId &&
+                    x.DisplayOrder > displayOrder)
+        .OrderBy(x => x.DisplayOrder)
+        .ToListAsync();
     }
 }

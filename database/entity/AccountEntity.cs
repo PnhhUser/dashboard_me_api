@@ -11,4 +11,6 @@ public class AccountEntity : BaseEntity
     public bool IsOnline { get; set; }
 
     public RoleEnum Role { get; set; } = RoleEnum.User;
+
+    public ICollection<RefreshTokenEntity> RefreshTokens { get; set; } = new List<RefreshTokenEntity>();
 }

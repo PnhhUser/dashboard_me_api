@@ -10,5 +10,5 @@ public interface IBaseRepo<T> where T : class
 
     Task SaveAsync();
 
-    void SoftDeleteAsync(T entity);
+    void SoftDelete(T entity);
 }

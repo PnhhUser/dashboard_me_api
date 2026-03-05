@@ -20,7 +20,6 @@ public static class ErrorMessage
     public const string ProductIsRequired = "Product name is required";
     public const string ProductCodeAlreadyExists = "Product code already exists";
     public const string PriceInvalid = "Price must be greater than 0";
-    public const string NoFilesUploaded = "No files uploaded";
 
     // --- STOCK ---
     public const string StockNotFound = "Stock not found";
@@ -29,4 +28,12 @@ public static class ErrorMessage
 
     // --- AUTHENTICATION ---
     public const string InvalidCredentials = "Invalid username or password";
+
+    // --- IMAGE ---
+    public const string ImageNotFound = "Image not found";
+    public const string NoFilesUploaded = "No files uploaded";
+    public const string ImageInvalid = "No valid images";
+    public const string FileExceedsMaximumSize = "File exceeds 5MB.";
+    public const string InvalidFileExtension = "Invalid file format.";
+    public const string InvalidFileType = "Invalid file type.";
 }

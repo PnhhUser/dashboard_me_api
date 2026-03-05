@@ -21,6 +21,10 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepo, CategoryRepo>();
         services.AddScoped<IProductRepo, ProductRepo>();
         services.AddScoped<IProductImageRepo, ProductImageRepo>();
+        services.AddScoped<IRefreshTokenRepo, RefreshTokenRepo>();
+        services.AddScoped<IPurchaseOrderRepo, PurchaseOrderRepo>();
+        services.AddScoped<IPurchaseOrderItemRepo, PurchaseOrderItemRepo>();
+
 
         return services;
     }

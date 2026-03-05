@@ -43,7 +43,7 @@ public class CategoryService : ICategoryService
             );
         }
 
-        _categoryRepo.SoftDeleteAsync(existed);
+        _categoryRepo.SoftDelete(existed);
 
         await _categoryRepo.SaveAsync();
 
