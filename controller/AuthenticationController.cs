@@ -24,6 +24,9 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
     {
         var result = await _authService.RegisterAsync(dto);
+
+        Response.Cookies.Append("refreshToken", result.RefreshToken, RefreshCookieOptions());
+
         return Ok(ApiResponse<AuthModel>.Ok(result));
     }
 
@@ -39,26 +42,56 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginDTO dto)
     {
         var result = await _authService.LoginAsync(dto);
+
+        Response.Cookies.Append("refreshToken", result.RefreshToken, RefreshCookieOptions());
+
         return Ok(ApiResponse<AuthModel>.Ok(result));
     }
 
     [Authorize]
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] LogoutDTO dto)
+    public async Task<IActionResult> Logout()
     {
         var accountId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var refreshToken = Request.Cookies["refreshToken"];
 
-        await _authService.LogoutAsync(accountId, dto.RefreshToken);
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized();
+
+        await _authService.LogoutAsync(accountId, refreshToken);
+
+        Response.Cookies.Delete("refreshToken", RefreshCookieOptions());
 
         return Ok(ApiResponse.Ok());
     }
 
 
+    // [HttpPost("refresh-token")]
+    // [ProducesResponseType(typeof(ApiResponse<AuthModel>), StatusCodes.Status200OK)]
+    // public async Task<IActionResult> Refresh([FromBody] RefreshTokenDTO dto)
+    // {
+    //     var result = await _authService.RefreshAsync(dto.RefreshToken);
+
+    //     return Ok(ApiResponse<AuthModel>.Ok(result));
+    // }
+
     [HttpPost("refresh-token")]
-    [ProducesResponseType(typeof(ApiResponse<AuthModel>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDTO dto)
+    public async Task<IActionResult> Refresh()
     {
-        var result = await _authService.RefreshAsync(dto.RefreshToken);
+        var refreshToken = Request.Cookies["refreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized();
+
+        var result = await _authService.RefreshAsync(refreshToken);
+
+        if (result == null)
+        {
+            Response.Cookies.Delete("refreshToken");
+            return Unauthorized();
+        }
+
+        Response.Cookies.Append("refreshToken", result.RefreshToken, RefreshCookieOptions());
 
         return Ok(ApiResponse<AuthModel>.Ok(result));
     }
@@ -72,4 +105,14 @@ public class AuthenticationController : ControllerBase
 
         return Ok(ApiResponse<AuthUserModel>.Ok(result));
     }
+
+
+    private CookieOptions RefreshCookieOptions() => new()
+    {
+        HttpOnly = true,
+        Secure = false,
+        SameSite = SameSiteMode.Lax,
+        Path = "/",
+        Domain = "localhost"
+    };
 }

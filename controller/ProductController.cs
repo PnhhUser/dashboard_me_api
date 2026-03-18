@@ -4,105 +4,81 @@ using Microsoft.AspNetCore.Mvc;
 
 [Authorize(Roles = "Admin")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/products")]
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
     private readonly IProductImageService _productImageService;
 
-    public ProductController(IProductService productService, IProductImageService productImageService)
+    public ProductController(
+        IProductService productService,
+        IProductImageService productImageService)
     {
         _productService = productService;
         _productImageService = productImageService;
     }
 
-    /// <summary>
-    /// Get all products
-    /// </summary>
-    /// <returns>List of all products</returns>
-    [HttpGet("list")]
-    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ProductModel>>), StatusCodes.Status200OK)]
+    // ===================== PRODUCT =====================
+
+    [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         var products = await _productService.GetAllAsync();
-
         return Ok(ApiResponse<IReadOnlyList<ProductModel>>.Ok(products));
     }
 
-    /// <summary>
-    /// Get product by ID
-    /// </summary>
-    /// <param name="id">Product ID</param>
-    /// <returns>Product details</returns>
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(ApiResponse<ProductModel>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id)
     {
         var product = await _productService.GetByIdAsync(id);
-
         return Ok(ApiResponse<ProductModel>.Ok(product));
     }
 
-    /// <summary>
-    /// Create a new product
-    /// </summary>
-    /// <param name="dto">Product creation data</param>
-    /// <returns>Created product</returns>
-    [HttpPost("create")]
-    [ProducesResponseType(typeof(ApiResponse<ProductModel>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductDTO dto)
     {
         var product = await _productService.AddAsync(dto);
-
-        return Ok(ApiResponse<ProductModel>.Ok(product, ResponsesMessage.CreatedSuccessfully("Product")));
+        return Ok(ApiResponse<ProductModel>.Ok(
+            product,
+            ResponsesMessage.CreatedSuccessfully("Product")
+        ));
     }
 
-    /// <summary>
-    /// Edit existing product
-    /// </summary>
-    /// <param name="dto">Product edit data</param>
-    /// <returns>Updated product</returns>
-    [HttpPut("edit")]
-    [ProducesResponseType(typeof(ApiResponse<ProductModel>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Edit([FromBody] EditProductDTO dto)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] EditProductDTO dto)
     {
+        dto.Id = id;
         var product = await _productService.EditAsync(dto);
 
-        return Ok(ApiResponse<ProductModel>.Ok(product, ResponsesMessage.EditedSuccessfully("Product")));
+        return Ok(ApiResponse<ProductModel>.Ok(
+            product,
+            ResponsesMessage.EditedSuccessfully("Product")
+        ));
     }
 
-    /// <summary>
-    /// Delete (soft delete) a product
-    /// </summary>
-    /// <param name="id">Product ID</param>
-    /// <returns>Deleted product</returns>
-    [HttpDelete("remove/{id:int}")]
-    [ProducesResponseType(typeof(ApiResponse<ProductModel>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Remove(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
     {
         var product = await _productService.RemoveAsync(id);
 
-        return Ok(ApiResponse<ProductModel>.Ok(product, ResponsesMessage.RemovedSuccessfully("Product")));
+        return Ok(ApiResponse<ProductModel>.Ok(
+            product,
+            ResponsesMessage.RemovedSuccessfully("Product")
+        ));
     }
 
+    // ===================== PRODUCT IMAGES =====================
+
     /// <summary>
-    /// Upload multiple images for a product
+    /// Upload multiple images
     /// </summary>
-    /// <param name="dto">Upload images data</param>
-    /// <returns>Success response</returns>
-    [HttpPost("upload-images")]
+    [HttpPost("{productId:int}/images")]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadImages([FromForm] UploadProductImagesDto dto)
+    public async Task<IActionResult> UploadImages(
+        int productId,
+        [FromForm] List<IFormFile> files)
     {
-        await _productImageService.UploadImagesAsync(dto);
+        await _productImageService.UploadImagesAsync(productId, files);
 
         return Ok(ApiResponse<string>.Ok(
             "Upload successful",
@@ -110,43 +86,49 @@ public class ProductController : ControllerBase
         ));
     }
 
-    [HttpPut("set-thumbnail")]
-    public async Task<IActionResult> SetThumbnail([FromBody] SetProductThumbnailDto dto)
+    /// <summary>
+    /// Get all images
+    /// </summary>
+    [HttpGet("{productId:int}/images")]
+    public async Task<IActionResult> GetImages(int productId)
     {
-        await _productImageService
-            .SetThumbnailAsync(dto.ProductId, dto.DisplayOrder);
+        var result = await _productImageService.GetImagesByProductId(productId);
 
-        return Ok(new
-        {
-            message = "Thumbnail updated successfully."
-        });
+        return Ok(ApiResponse<object>.Ok(result));
     }
-
-    [HttpGet("{productId}/images")]
-    public async Task<IActionResult> GetImagesByProductId(int productId)
-    {
-        var result = await _productImageService
-            .GetImagesByProductId(productId);
-
-        return Ok(result);
-    }
-
-
-    [HttpGet("{productId}/thumbnail")]
-    public async Task<IActionResult> GetThumbnail(int productId)
-    {
-        var result = await _productImageService
-            .GetThumbnailAsync(productId);
-
-        return Ok(result);
-    }
-
 
     /// <summary>
-    /// Thay đổi ảnh theo displayOrder
+    /// Get thumbnail
     /// </summary>
-    [HttpPut("{displayOrder:int}")]
-    public async Task<IActionResult> ChangeImage(
+    [HttpGet("{productId:int}/images/thumbnail")]
+    public async Task<IActionResult> GetThumbnail(int productId)
+    {
+        var result = await _productImageService.GetThumbnailAsync(productId);
+
+        return Ok(ApiResponse<object>.Ok(result));
+    }
+
+    /// <summary>
+    /// Set thumbnail
+    /// </summary>
+    [HttpPut("{productId:int}/images/thumbnail")]
+    public async Task<IActionResult> SetThumbnail(
+        int productId,
+        [FromBody] SetProductThumbnailDto dto)
+    {
+        await _productImageService.SetThumbnailAsync(productId, dto.DisplayOrder);
+
+        return Ok(ApiResponse<string>.Ok(
+            "Thumbnail updated",
+            ResponsesMessage.EditedSuccessfully("Product image")
+        ));
+    }
+
+    /// <summary>
+    /// Update single image
+    /// </summary>
+    [HttpPut("{productId:int}/images/{displayOrder:int}")]
+    public async Task<IActionResult> UpdateImage(
         int productId,
         int displayOrder,
         IFormFile file)
@@ -156,28 +138,41 @@ public class ProductController : ControllerBase
 
         await _productImageService.ChangeImageAsync(productId, displayOrder, file);
 
-        return Ok(new
-        {
-            message = "Changed image successfully."
-        });
+        return Ok(ApiResponse<string>.Ok(
+            "Image updated",
+            ResponsesMessage.EditedSuccessfully("Product image")
+        ));
     }
 
+    /// <summary>
+    /// Update multiple images
+    /// </summary>
+    [HttpPut("{productId:int}/images")]
+    public async Task<IActionResult> UpdateImages(
+        int productId,
+        [FromForm] List<ProductImageUploadDto> images)
+    {
+        await _productImageService.ChangeImagesAsync(productId, images);
+
+        return Ok(ApiResponse<string>.Ok(
+            "Images updated",
+            ResponsesMessage.EditedSuccessfully("Product image")
+        ));
+    }
 
     /// <summary>
-    /// Xóa ảnh theo displayOrder
+    /// Delete image
     /// </summary>
-    [HttpDelete("{displayOrder:int}")]
-    public async Task<IActionResult> RemoveImage(
+    [HttpDelete("{productId:int}/images/{displayOrder:int}")]
+    public async Task<IActionResult> DeleteImage(
         int productId,
         int displayOrder)
     {
         await _productImageService.RemoveImage(productId, displayOrder);
 
-        return Ok(new
-        {
-            message = "Remove image successfully."
-        });
+        return Ok(ApiResponse<string>.Ok(
+            "Image deleted",
+            ResponsesMessage.RemovedSuccessfully("Product image")
+        ));
     }
-
-
 }

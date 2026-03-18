@@ -1,6 +1,6 @@
 public interface IProductImageService
 {
-    Task UploadImagesAsync(UploadProductImagesDto dto);
+    Task UploadImagesAsync(int productId, List<IFormFile> files);
 
     Task SetThumbnailAsync(int productId, int displayOrder);
 
@@ -9,6 +9,8 @@ public interface IProductImageService
     Task<ProductImageModel> GetThumbnailAsync(int productId);
 
     Task ChangeImageAsync(int productId, int displayOrder, IFormFile file);
+
+    Task ChangeImagesAsync(int productId, List<ProductImageUploadDto> images);
 
     Task RemoveImage(int productId, int displayOrder);
 }

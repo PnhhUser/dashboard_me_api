@@ -8,8 +8,9 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
-        services.AddScoped<IProductImageService, ProductService>();
+        services.AddScoped<IProductImageService, ProductImageService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IFileService, FileService>();
 
         return services;
     }

@@ -49,6 +49,5 @@ public class SetProductThumbnailDto
 
 
     [Required(ErrorMessage = "DisplayOrder is required.")]
-    [Range(1, int.MaxValue, ErrorMessage = "DisplayOrder must be greater than 0.")]
     public int DisplayOrder { get; set; }
 }

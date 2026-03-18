@@ -26,11 +26,15 @@ builder.Services
 // Add CORS policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAngular", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy
+            .SetIsOriginAllowed(origin =>
+                origin.Contains("devtunnels.ms") ||
+                origin.Contains("localhost"))
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -111,7 +115,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // Use CORS
-app.UseCors("AllowAll");
+app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 

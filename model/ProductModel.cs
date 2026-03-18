@@ -10,6 +10,8 @@ public class ProductModel
 
     public decimal Price { get; set; }
 
+    public int Stock { get; set; }
+
     public ActiveEnum Active { get; set; } = ActiveEnum.Active;
 
     public required string Code { get; set; }
@@ -34,6 +36,7 @@ public class ProductModel
             Name = entity.Name,
             Description = entity.Description,
             Price = entity.Price,
+            Stock = entity.Stock,
             Active = entity.Active,
             Code = entity.Code,
             CategoryId = entity.CategoryId,
@@ -52,6 +55,7 @@ public class ProductModel
             Name = entity.Name,
             Description = entity.Description,
             Price = entity.Price,
+            Stock = entity.Stock,
             Active = entity.Active,
             Code = entity.Code,
             CategoryModel = model,
@@ -80,6 +84,9 @@ public class CreateProductDTO
     [Required(ErrorMessage = "Price is required")]
     [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     public decimal Price { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Stock must be greater than 0")]
+    public int Stock { get; set; }
 
     [Required(ErrorMessage = "Category is required")]
     [Range(1, int.MaxValue, ErrorMessage = "Category ID must be valid")]
@@ -112,4 +119,14 @@ public class EditProductDTO
     [Required(ErrorMessage = "Price is required")]
     [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     public decimal Price { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Stock must be greater than 0")]
+    public int Stock { get; set; }
+}
+
+
+public class ProductImageUploadDto
+{
+    public int DisplayOrder { get; set; }
+    public IFormFile File { get; set; } = null!;
 }

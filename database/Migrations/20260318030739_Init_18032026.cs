@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace dashboard_me_api.database.Migrations
 {
     /// <inheritdoc />
-    public partial class _03032026_InitDB : Migration
+    public partial class Init_18032026 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -80,6 +80,34 @@ namespace dashboard_me_api.database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_suppliers", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "refresh_tokens",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Token = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    IsRevoked = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
+                    AccountId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refresh_tokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -206,7 +234,7 @@ namespace dashboard_me_api.database.Migrations
             migrationBuilder.InsertData(
                 table: "accounts",
                 columns: new[] { "Id", "Active", "CreatedAt", "DeletedAt", "LastTimeActive", "PasswordHash", "Role", "UpdatedAt", "Username" },
-                values: new object[] { 1, 1, new DateTime(2026, 3, 3, 14, 40, 17, 417, DateTimeKind.Utc).AddTicks(2987), null, null, "$2a$11$bXEkjYyziiV7RDzRDIpf5e1pbuY6RTtpy2Bk2C3lkcv8xo7drL53G", 99, null, "admin" });
+                values: new object[] { 1, 1, new DateTime(2026, 3, 18, 3, 7, 37, 918, DateTimeKind.Utc).AddTicks(6460), null, null, "$2a$11$RQ2qNmRwWFK67kX/dVIVp.nZZvskW8EgQ6zfwfspTfOSYC9ccurJG", 99, null, "admin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_accounts_Username",
@@ -258,6 +286,17 @@ namespace dashboard_me_api.database.Migrations
                 column: "PurchaseOrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_AccountId",
+                table: "refresh_tokens",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_refresh_tokens_Token",
+                table: "refresh_tokens",
+                column: "Token",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_suppliers_Phone",
                 table: "suppliers",
                 column: "Phone",
@@ -268,19 +307,22 @@ namespace dashboard_me_api.database.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "accounts");
-
-            migrationBuilder.DropTable(
                 name: "product_images");
 
             migrationBuilder.DropTable(
                 name: "purchase_order_items");
 
             migrationBuilder.DropTable(
+                name: "refresh_tokens");
+
+            migrationBuilder.DropTable(
                 name: "products");
 
             migrationBuilder.DropTable(
                 name: "purchas_orders");
+
+            migrationBuilder.DropTable(
+                name: "accounts");
 
             migrationBuilder.DropTable(
                 name: "categories");

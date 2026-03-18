@@ -4,25 +4,18 @@ using Core.Exceptions;
 /// <summary>
 /// Service for managing products
 /// </summary>
-public class ProductService : IProductService, IProductImageService
+public class ProductService : IProductService
 {
     private readonly IProductRepo _productRepo;
     private readonly ICategoryRepo _categoryRepo;
 
-    private readonly IProductImageRepo _productImageRepo;
-
-    private readonly IWebHostEnvironment _environment;
-
     public ProductService(
         IProductRepo productRepo,
-        ICategoryRepo categoryRepo,
-        IProductImageRepo productImageRepo,
-        IWebHostEnvironment environment)
+        ICategoryRepo categoryRepo
+        )
     {
         _productRepo = productRepo;
         _categoryRepo = categoryRepo;
-        _productImageRepo = productImageRepo;
-        _environment = environment;
     }
 
     /// <summary>
@@ -31,30 +24,25 @@ public class ProductService : IProductService, IProductImageService
     /// <returns>List of all active products</returns>
     public async Task<IReadOnlyList<ProductModel>> GetAllAsync()
     {
-        var products = await _productRepo.GetAllAsync();
+        var products = await _productRepo.GetAllWithRelationAsync();
 
-        var result = new List<ProductModel>();
+        return products.Select(MapToModel).ToList();
+    }
 
-        foreach (var product in products)
-        {
-            var category = await _categoryRepo.GetByIdAsync(product.CategoryId);
 
-            var images = await _productImageRepo.GetByProductIdAsync(product.Id);
+    private ProductModel MapToModel(ProductEntity product)
+    {
+        var model = ProductModel.ToModel(
+            product,
+            product.Category != null ? CategoryModel.ToModel(product.Category) : null
+        );
 
-            var model = ProductModel.ToModel(
-                product,
-                category != null ? CategoryModel.ToModel(category) : null
-            );
+        model.Images = product.Images?
+            .OrderBy(x => x.DisplayOrder)
+            .Select(ProductImageModel.ToModel)
+            .ToList() ?? new List<ProductImageModel>();
 
-            model.Images = images
-                .OrderBy(x => x.DisplayOrder)
-                .Select(x => ProductImageModel.ToModel(x))
-                .ToList();
-
-            result.Add(model);
-        }
-
-        return result;
+        return model;
     }
 
     /// <summary>
@@ -65,26 +53,20 @@ public class ProductService : IProductService, IProductImageService
     /// <exception cref="AppException">Thrown when product not found</exception>
     public async Task<ProductModel> GetByIdAsync(int id)
     {
-        var product = await _productRepo.GetByIdAsync(id);
+        var product = await _productRepo.GetByIdWithRelationAsync(id);
 
         if (product == null)
             throw new AppException(ErrorCode.NotFound, ErrorMessage.ProductNotFound);
 
-        var category = await _categoryRepo.GetByIdAsync(product.CategoryId);
-
-        if (category == null)
+        if (product.Category == null)
             throw new AppException(ErrorCode.NotFound, ErrorMessage.CategoryNotFound);
 
-        var images = await _productImageRepo.GetByProductIdAsync(id);
+        var model = ProductModel.ToModel(
+            product,
+            CategoryModel.ToModel(product.Category)
+        );
 
-        var model = ProductModel.ToModel(product, CategoryModel.ToModel(category));
-
-        model.Images = images
-            .OrderBy(x => x.DisplayOrder)
-            .Select(x => ProductImageModel.ToModel(x))
-            .ToList();
-
-        return model;
+        return MapToModel(product);
     }
 
     /// <summary>
@@ -107,7 +89,7 @@ public class ProductService : IProductService, IProductImageService
         }
 
         // normalize code to upper so that uniqueness is case‑insensitive
-        var normalizedCode = dto.Code.ToUpperInvariant();
+        var normalizedCode = NormalizeCode(dto.Code);
         var exists = await _productRepo.GetByCodeAsync(normalizedCode);
 
         if (exists != null)
@@ -149,10 +131,14 @@ public class ProductService : IProductService, IProductImageService
         await _productRepo.AddAsync(entity);
         await _productRepo.SaveAsync();
 
+
         var categoryModel = CategoryModel.ToModel(category);
 
         return ProductModel.ToModel(entity, categoryModel);
     }
+
+
+
 
     /// <summary>
     /// Edit an existing product
@@ -183,17 +169,10 @@ public class ProductService : IProductService, IProductImageService
                 ErrorMessage.ProductIsRequired);
         }
 
-        if (!string.IsNullOrWhiteSpace(dto.Name))
-        {
-            existed.Name = dto.Name;
-        }
+        existed.Name = dto.Name;
+        existed.Description = dto.Description;
 
-        if (!string.IsNullOrWhiteSpace(dto.Description))
-        {
-            existed.Description = dto.Description;
-        }
-
-        var duplicateCode = await _productRepo.GetByCodeAsync(dto.Code.ToUpperInvariant());
+        var duplicateCode = await _productRepo.GetByCodeAsync(NormalizeCode(dto.Code));
 
         if (duplicateCode != null && duplicateCode.Id != existed.Id)
         {
@@ -204,7 +183,7 @@ public class ProductService : IProductService, IProductImageService
         }
         else
         {
-            existed.Code = dto.Code.ToUpperInvariant();
+            existed.Code = NormalizeCode(dto.Code);
         }
 
 
@@ -244,6 +223,11 @@ public class ProductService : IProductService, IProductImageService
         return ProductModel.ToModel(existed, categoryModel);
     }
 
+    private string NormalizeCode(string code)
+    {
+        return code?.Trim().ToUpperInvariant() ?? string.Empty;
+    }
+
     /// <summary>
     /// Delete (soft delete) a product
     /// </summary>
@@ -269,202 +253,5 @@ public class ProductService : IProductService, IProductImageService
         return ProductModel.ToModel(existed);
     }
 
-    public async Task UploadImagesAsync(UploadProductImagesDto dto)
-    {
-        var product = await _productRepo.GetByIdAsync(dto.ProductId);
-
-        if (product == null)
-        {
-            throw new AppException(
-               ErrorCode.NotFound,
-               ErrorMessage.ProductNotFound
-           );
-        }
-
-        if (dto.Files == null || dto.Files.Count == 0)
-        {
-            throw new AppException(
-                ErrorCode.BadRequest,
-                ErrorMessage.NoFilesUploaded
-            );
-        }
-
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-        var allowedContentTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-
-        const long maxFileSize = 5 * 1024 * 1024; // 5MB
-
-        var imageEntities = new List<ProductImageEntity>();
-
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
-
-        if (!Directory.Exists(uploadPath))
-            Directory.CreateDirectory(uploadPath);
-
-        var maxOrder = await _productImageRepo.GetMaxDisplayOrderAsync(dto.ProductId);
-
-        int displayOrder = maxOrder + 1;
-
-        foreach (var file in dto.Files)
-        {
-            if (file.Length == 0)
-                continue;
-
-            if (file.Length > maxFileSize)
-                throw new AppException(ErrorCode.BadRequest, ErrorMessage.FileExceedsMaximumSize);
-
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-            if (!allowedExtensions.Contains(extension))
-                throw new AppException(ErrorCode.BadRequest, ErrorMessage.InvalidFileExtension);
-
-            if (!allowedContentTypes.Contains(file.ContentType.ToLower()))
-                throw new AppException(ErrorCode.BadRequest, ErrorMessage.InvalidFileType);
-
-            var fileName = $"{Guid.NewGuid()}{extension}";
-            var filePath = Path.Combine(uploadPath, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            imageEntities.Add(new ProductImageEntity
-            {
-                ProductId = dto.ProductId,
-                ImageUrl = $"/uploads/{fileName}",
-                DisplayOrder = displayOrder++,
-                IsPrimary = false,
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-
-        if (!imageEntities.Any())
-            throw new AppException(ErrorCode.BadRequest, ErrorMessage.ImageInvalid);
-
-        await _productImageRepo.AddRangeAsync(imageEntities);
-        await _productImageRepo.SaveAsync();
-    }
-
-    public async Task SetThumbnailAsync(int productId, int displayOrder)
-    {
-        var affected = await _productImageRepo.SetThumbnailByDisplayOrderAsync(productId, displayOrder);
-
-        if (affected == 0)
-        {
-            throw new AppException(
-                ErrorCode.NotFound,
-                ErrorMessage.ImageNotFound
-            );
-        }
-
-        await _productImageRepo.SaveAsync();
-    }
-
-    public async Task<IEnumerable<ProductImageModel>> GetImagesByProductId(int productId)
-    {
-        var entities = await _productImageRepo.GetByProductIdAsync(productId);
-
-        if (entities == null)
-        {
-            throw new AppException(
-                ErrorCode.NotFound,
-                ErrorMessage.ImageNotFound
-            );
-        }
-
-        return entities.Select(ProductImageModel.ToModel);
-    }
-
-    public async Task<ProductImageModel> GetThumbnailAsync(int productId)
-    {
-        var image = await _productImageRepo.GetThumbnailAsync(productId);
-
-        if (image == null)
-        {
-            throw new AppException(
-                ErrorCode.NotFound,
-                ErrorMessage.ImageNotFound
-            );
-        }
-
-        return ProductImageModel.ToModel(image);
-    }
-
-    public async Task ChangeImageAsync(
-    int productId,
-    int displayOrder,
-    IFormFile file)
-    {
-        var image = await _productImageRepo
-            .GetByProductAndOrderAsync(productId, displayOrder);
-
-        if (image == null)
-            throw new AppException(ErrorCode.NotFound, ErrorMessage.ImageNotFound);
-
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName).ToLowerInvariant()}";
-        var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
-
-        if (!Directory.Exists(uploadPath))
-            Directory.CreateDirectory(uploadPath);
-
-        var fullPath = Path.Combine(uploadPath, fileName);
-
-        using (var stream = new FileStream(fullPath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        var newImageUrl = $"/uploads/{fileName}";
-
-        DeletePhysicalFile(image.ImageUrl);
-
-        image.ImageUrl = newImageUrl;
-
-        await _productImageRepo.SaveAsync();
-    }
-
-    public async Task RemoveImage(int productId, int displayOrder)
-    {
-        var image = await _productImageRepo
-            .GetByProductAndOrderAsync(productId, displayOrder);
-
-        if (image == null)
-            throw new AppException(ErrorCode.NotFound, ErrorMessage.ImageNotFound);
-
-        var imageUrl = image.ImageUrl;
-
-        _productImageRepo.Remove(image);
-
-        var imagesToReorder = await _productImageRepo
-            .GetImagesGreaterThanOrderAsync(productId, displayOrder);
-
-        foreach (var img in imagesToReorder)
-        {
-            img.DisplayOrder -= 1;
-        }
-
-        await _productImageRepo.SaveAsync();
-
-        // 3️⃣ Sau khi DB ok → xóa file vật lý
-        DeletePhysicalFile(imageUrl);
-    }
-
-
-    private void DeletePhysicalFile(string imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-            return;
-
-        // Bỏ dấu "/" đầu
-        var relativePath = imageUrl.TrimStart('/');
-
-        var fullPath = Path.Combine(_environment.WebRootPath, relativePath);
-
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
-    }
 
 }

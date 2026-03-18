@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace dashboard_me_api.database.Migrations
 {
     [DbContext(typeof(MeContext))]
-    [Migration("20260305115316_03052026_UpDb")]
-    partial class _03052026_UpDb
+    [Migration("20260318030739_Init_18032026")]
+    partial class Init_18032026
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -76,9 +76,9 @@ namespace dashboard_me_api.database.Migrations
                         {
                             Id = 1,
                             Active = 1,
-                            CreatedAt = new DateTime(2026, 3, 5, 11, 53, 14, 376, DateTimeKind.Utc).AddTicks(8647),
+                            CreatedAt = new DateTime(2026, 3, 18, 3, 7, 37, 918, DateTimeKind.Utc).AddTicks(6460),
                             IsOnline = false,
-                            PasswordHash = "$2a$11$vHZ2d2Hq2zUh12RJH6029.huWAnPhBfc3gBX6xDA8FjHSFUGS2WW6",
+                            PasswordHash = "$2a$11$RQ2qNmRwWFK67kX/dVIVp.nZZvskW8EgQ6zfwfspTfOSYC9ccurJG",
                             Role = 99,
                             Username = "admin"
                         });
