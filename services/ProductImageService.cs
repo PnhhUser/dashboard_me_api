@@ -133,12 +133,14 @@ public class ProductImageService : IProductImageService
         return entities.Select(ProductImageModel.ToModel);
     }
 
-    public async Task<ProductImageModel> GetThumbnailAsync(int productId)
+    public async Task<ProductImageModel?> GetThumbnailAsync(int productId)
     {
         var image = await _productImageRepo.GetThumbnailAsync(productId);
 
         if (image == null)
-            throw new AppException(ErrorCode.NotFound, ErrorMessage.ImageNotFound);
+        {
+            return null;
+        }
 
         return ProductImageModel.ToModel(image);
     }

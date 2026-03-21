@@ -6,7 +6,7 @@ public interface IProductImageService
 
     Task<IEnumerable<ProductImageModel>> GetImagesByProductId(int productId);
 
-    Task<ProductImageModel> GetThumbnailAsync(int productId);
+    Task<ProductImageModel?> GetThumbnailAsync(int productId);
 
     Task ChangeImageAsync(int productId, int displayOrder, IFormFile file);
 

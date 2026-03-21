@@ -94,7 +94,7 @@ public class ProductController : ControllerBase
     {
         var result = await _productImageService.GetImagesByProductId(productId);
 
-        return Ok(ApiResponse<object>.Ok(result));
+        return Ok(ApiResponse<IEnumerable<ProductImageModel>>.Ok(result));
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class ProductController : ControllerBase
     {
         var result = await _productImageService.GetThumbnailAsync(productId);
 
-        return Ok(ApiResponse<object>.Ok(result));
+        return Ok(ApiResponse<ProductImageModel?>.Ok(result));
     }
 
     /// <summary>

@@ -110,13 +110,13 @@ public class ProductService : IProductService
             );
         }
 
-        if (dto.Price <= 0)
-        {
-            throw new AppException(
-                ErrorCode.ValidationError,
-                ErrorMessage.PriceInvalid
-            );
-        }
+        // if (dto.Price <= 0)
+        // {
+        //     throw new AppException(
+        //         ErrorCode.ValidationError,
+        //         ErrorMessage.PriceInvalid
+        //     );
+        // }
 
         var entity = new ProductEntity
         {
@@ -125,6 +125,7 @@ public class ProductService : IProductService
             Price = dto.Price,
             Code = normalizedCode,
             Category = category,
+            Stock = dto.Stock,
             Active = dto.Active
         };
 
@@ -202,16 +203,17 @@ public class ProductService : IProductService
         }
 
 
-        if (dto.Price <= 0)
-        {
-            throw new AppException(
-                ErrorCode.ValidationError,
-                ErrorMessage.PriceInvalid
-            );
-        }
+        // if (dto.Price <= 0)
+        // {
+        //     throw new AppException(
+        //         ErrorCode.ValidationError,
+        //         ErrorMessage.PriceInvalid
+        //     );
+        // }
 
 
         existed.Price = dto.Price;
+        existed.Stock = dto.Stock;
         existed.Active = dto.Active;
         existed.UpdatedAt = DateTime.UtcNow;
 

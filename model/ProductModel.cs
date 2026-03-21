@@ -82,10 +82,9 @@ public class CreateProductDTO
     public required string Code { get; set; }
 
     [Required(ErrorMessage = "Price is required")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     public decimal Price { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Stock must be greater than 0")]
+    [Required(ErrorMessage = "Stock is required")]
     public int Stock { get; set; }
 
     [Required(ErrorMessage = "Category is required")]
@@ -117,10 +116,9 @@ public class EditProductDTO
     public int CategoryId { get; set; }
 
     [Required(ErrorMessage = "Price is required")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     public decimal Price { get; set; }
 
-    [Range(1, int.MaxValue, ErrorMessage = "Stock must be greater than 0")]
+    [Required(ErrorMessage = "Stock is required")]
     public int Stock { get; set; }
 }
 
