@@ -19,23 +19,25 @@ builder.Services.AddDbContext<MeContext>(option =>
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Add dependency injection
-builder.Services
-    .AddApplication()
-    .AddInfrastructure();
+// builder.Services
+//     .AddApplication()
+//     .AddInfrastructure();
 
-// Add CORS policy
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>();
+// // Add CORS policy
+// var allowedOrigins = builder.Configuration
+//     .GetSection("Cors:AllowedOrigins")
+//     .Get<string[]>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                allowedOrigins!.Contains(origin) ||
-                origin.EndsWith("devtunnels.ms"))
+            .WithOrigins(
+                "https://dashmetest.netlify.app",
+                "https://localhost:4200",
+                "http://localhost:4200"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
