@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
+
 var version = ServerVersion.AutoDetect(conn);
 
 // Add database context
@@ -22,16 +23,19 @@ builder.Services
     .AddApplication()
     .AddInfrastructure();
 
-
 // Add CORS policy
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
             .SetIsOriginAllowed(origin =>
-                origin.Contains("devtunnels.ms") ||
-                origin.Contains("localhost"))
+                allowedOrigins!.Contains(origin) ||
+                origin.EndsWith("devtunnels.ms"))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -60,7 +64,7 @@ builder.Services.AddControllers()
         };
     });
 
-// Add Swagger/OpenAPI
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -98,14 +102,30 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+
+// 🔥🔥🔥 AUTO MIGRATE (QUAN TRỌNG NHẤT)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<MeContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Migration failed: " + ex.Message);
+        throw;
+    }
+}
+
+
+// Configure pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Use custom exception middleware
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
@@ -114,7 +134,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Use CORS
 app.UseCors("AllowAngular");
 
 app.UseAuthentication();
