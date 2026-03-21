@@ -31,34 +31,46 @@ builder.Services
 
 
 // 🔥🔥🔥 CORS (fix toàn bộ lỗi)
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
+// var allowedOrigins = builder.Configuration
+//     .GetSection("Cors:AllowedOrigins")
+//     .Get<string[]>() ?? Array.Empty<string>();
+
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowAngular", policy =>
+//     {
+//         policy
+//             .SetIsOriginAllowed(origin =>
+//                  // cho phép config từ env
+//                  allowedOrigins.Any(o => origin.StartsWith(o))
+
+//                 // cho phép localhost dev
+//                 || origin.Contains("localhost")
+
+//                 // cho phép Railway frontend
+//                 || origin.Contains("railway.app")
+
+//                 // dev tunnel
+//                 || origin.EndsWith("devtunnels.ms")
+//             )
+//             .AllowAnyHeader()
+//             .AllowAnyMethod()
+//             .AllowCredentials();
+//     });
+// });
+
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                 // cho phép config từ env
-                 allowedOrigins.Any(o => origin.StartsWith(o))
-
-                // cho phép localhost dev
-                || origin.Contains("localhost")
-
-                // cho phép Railway frontend
-                || origin.Contains("railway.app")
-
-                // dev tunnel
-                || origin.EndsWith("devtunnels.ms")
-            )
+            .WithOrigins("https://dashmetest.netlify.app")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
-
 
 // 🔥 Controller + validation
 builder.Services.AddControllers()
