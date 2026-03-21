@@ -5,38 +5,53 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 🔥 Logging (debug Railway)
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// 🔥 Connection string
 var conn = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' not found.");
 
 var version = ServerVersion.AutoDetect(conn);
 
-// Add database context
+// 🔥 DB Context
 builder.Services.AddDbContext<MeContext>(option =>
 {
     option.UseMySql(conn, version);
 });
 
+// 🔥 JWT
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-// Add dependency injection
-// builder.Services
-//     .AddApplication()
-//     .AddInfrastructure();
+// 🔥 DI
+builder.Services
+    .AddApplication()
+    .AddInfrastructure();
 
-// // Add CORS policy
-// var allowedOrigins = builder.Configuration
-//     .GetSection("Cors:AllowedOrigins")
-//     .Get<string[]>();
+
+// 🔥🔥🔥 CORS (fix toàn bộ lỗi)
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
-            .WithOrigins(
-                "https://dashmetest.netlify.app",
-                "https://localhost:4200",
-                "http://localhost:4200"
+            .SetIsOriginAllowed(origin =>
+                 // cho phép config từ env
+                 allowedOrigins.Any(o => origin.StartsWith(o))
+
+                // cho phép localhost dev
+                || origin.Contains("localhost")
+
+                // cho phép Railway frontend
+                || origin.Contains("railway.app")
+
+                // dev tunnel
+                || origin.EndsWith("devtunnels.ms")
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -44,7 +59,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add controllers with validation
+
+// 🔥 Controller + validation
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -66,7 +82,8 @@ builder.Services.AddControllers()
         };
     });
 
-// Swagger
+
+// 🔥 Swagger (bật cả production cho test)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -112,21 +129,21 @@ using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<MeContext>();
         db.Database.Migrate();
+        Console.WriteLine("✅ Database migrated successfully");
     }
     catch (Exception ex)
     {
-        Console.WriteLine("Migration failed: " + ex.Message);
+        Console.WriteLine("❌ Migration failed: " + ex.Message);
         throw;
     }
 }
 
 
-// Configure pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// 🔥 Pipeline
+
+// bật swagger cả production (test API Railway)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
