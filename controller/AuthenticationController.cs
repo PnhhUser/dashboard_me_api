@@ -107,12 +107,19 @@ public class AuthenticationController : ControllerBase
     }
 
 
-    private CookieOptions RefreshCookieOptions() => new()
+    private CookieOptions RefreshCookieOptions()
     {
-        HttpOnly = true,
-        Secure = false,
-        SameSite = SameSiteMode.Lax,
-        Path = "/",
-        Domain = "localhost"
-    };
+        var isProd = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
+
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isProd, // 🔥 Prod = true, Local = false
+            SameSite = isProd ? SameSiteMode.None : SameSiteMode.Lax,
+            Path = "/",
+
+            // 🔥 KHÔNG set Domain nếu không cần
+            // Domain = "localhost" ❌ bỏ đi
+        };
+    }
 }
