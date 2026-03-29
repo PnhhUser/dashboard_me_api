@@ -10,7 +10,8 @@ public static class DependencyInjection
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductImageService, ProductImageService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
-        services.AddScoped<IFileService, FileService>();
+        // services.AddScoped<IFileService, FileService>();
+        services.AddScoped<IFileService, R2FileService>();
 
         return services;
     }

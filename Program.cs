@@ -2,6 +2,7 @@ using Core.Middlewares;
 using Microsoft.EntityFrameworkCore;
 using Core.Extensions;
 using Microsoft.OpenApi.Models;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,30 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services
     .AddApplication()
     .AddInfrastructure();
+
+// 🔥 R2 (Cloudflare)
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var s3Config = new AmazonS3Config
+    {
+        ServiceURL = config["R2:ServiceUrl"],
+        ForcePathStyle = true,
+
+        // 🔥 QUAN TRỌNG
+        UseHttp = false,
+
+        // 🔥 FIX R2 (tránh redirect + lỗi signing)
+        AuthenticationRegion = "auto"
+    };
+
+    return new AmazonS3Client(
+        config["R2:AccessKey"],
+        config["R2:SecretKey"],
+        s3Config
+    );
+});
 
 
 // 🔥🔥🔥 CORS (fix toàn bộ lỗi)
@@ -65,7 +90,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
-            .WithOrigins("https://dashmetest.netlify.app")
+            .WithOrigins(["https://dashmetest.netlify.app", "http://localhost:4200"])
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

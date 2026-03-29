@@ -65,9 +65,9 @@ public class FileService : IFileService
         return Task.CompletedTask;
     }
 
-    public bool FileExists(string fileUrl)
+    public Task<bool> FileExistsAsync(string fileUrl)
     {
         var fullPath = Path.Combine(_env.WebRootPath, fileUrl.TrimStart('/'));
-        return File.Exists(fullPath);
+        return Task.FromResult(File.Exists(fullPath));
     }
 }

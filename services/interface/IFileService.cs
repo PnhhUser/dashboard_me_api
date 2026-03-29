@@ -4,5 +4,7 @@ public interface IFileService
 
     Task DeleteFileAsync(string fileUrl);
 
-    bool FileExists(string fileUrl);
+    // bool FileExists(string fileUrl);
+
+    Task<bool> FileExistsAsync(string fileUrl);
 }
