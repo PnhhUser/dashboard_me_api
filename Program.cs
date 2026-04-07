@@ -90,7 +90,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular", policy =>
     {
         policy
-            .WithOrigins(["https://dashmetest.netlify.app", "http://localhost:4200"])
+            .WithOrigins(["https://69d485c41e97280008a51e62--dashmedemo.netlify.app/", "http://localhost:4200"])
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
